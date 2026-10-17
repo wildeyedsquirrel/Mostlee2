@@ -24,10 +24,14 @@ jobs:
         with:
           channel: 'stable'
 
-      - name: Create Android Project
-        run: |
-          flutter create . --platforms=android --org com.mostlee.app
-          git checkout HEAD -- lib/main.dart
+      - name: Back up main.dart
+        run: cp lib/main.dart main.dart.tmp
+
+      - name: Create Android project
+        run: flutter create . --platforms=android --org com.mostlee.app --overwrite
+
+      - name: Restore main.dart
+        run: cp main.dart.tmp lib/main.dart
 
       - name: Enable Internet Permission
         run: |

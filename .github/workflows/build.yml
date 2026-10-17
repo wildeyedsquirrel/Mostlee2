@@ -1,0 +1,57 @@
+name: Build Mostlee APK
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Create Android Project
+        run: |
+          flutter create . --platforms=android --org com.mostlee.app
+          git checkout HEAD -- lib/main.dart
+
+      - name: Enable Internet Permission
+        run: |
+          python3 -c "
+          import os
+          path = 'android/app/src/main/AndroidManifest.xml'
+          if os.path.exists(path):
+              with open(path, 'r') as f:
+                  content = f.read()
+              if 'android.permission.INTERNET' not in content:
+                  content = content.replace('<manifest', '<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\">\n    <uses-permission android:name=\"android.permission.INTERNET\"/>', 1)
+                  with open(path, 'w') as f:
+                      f.write(content)
+          "
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build APK
+        run: flutter build apk --release
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Mostlee-app-release
+          path: build/app/outputs/flutter-apk/app-release.apk
+          
